@@ -2,6 +2,7 @@
 #define __IMAGE_HPP__
 
 #include <string>
+#include <cstring>
 
 class Image
 {
