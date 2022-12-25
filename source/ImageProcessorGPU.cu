@@ -341,7 +341,7 @@ __global__ void equalization(float* imageHSV, float* cdf, int width, int height,
 	}
 }
 
-void histogramEqualization(Image* image, int nbHistogram, int method)
+void histogramEqualization(dim3 gridDims, dim3 blockDims, Image* image, int nbHistogram, int method)
 {
 	unsigned char *dev_pixels;
 	float *imageHSV;
@@ -360,9 +360,6 @@ void histogramEqualization(Image* image, int nbHistogram, int method)
 	// Copy from image to device
 	cudaMemcpy(dev_pixels, image->_pixels, image->_width*image->_height*image->_nbChannels*sizeof(unsigned char), cudaMemcpyHostToDevice);
 
-	dim3 gridDims(8, 8);
-	dim3 blockDims(8, 8);
-
 	// Convert RGB to HSV
 	rgb2hsv<<<gridDims, blockDims>>>(dev_pixels, imageHSV, image->_width, image->_height);
 
@@ -371,7 +368,7 @@ void histogramEqualization(Image* image, int nbHistogram, int method)
 
 	// Repart
 	// repart_v2<<<gridDims, blockDims>>>(hist, cdf, image->_width, image->_height, nbHistogram, method);
-	repart_v4(gridDims, blockDims, hist, cdf, image->_width, image->_height, nbHistogram, method); // version 3 is call Host fucntion
+	repart_v4(gridDims, blockDims, hist, cdf, image->_width, image->_height, nbHistogram, method); // version 3, 4 is call Host fucntion
 
 	// Equalization
 	equalization<<<gridDims, blockDims>>>(imageHSV, cdf, image->_width, image->_height, nbHistogram);

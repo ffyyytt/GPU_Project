@@ -19,6 +19,6 @@ void repart_v3(dim3 gridDims, dim3 blockDims, int* hist, float* cdf, int width, 
 
 __global__ void equalization(float* imageHSV, float* cdf, int width, int height, int nbHistogram);
 
-void histogramEqualization(Image* image, int nbHistogram, int method);
+void histogramEqualization(dim3 gridDims, dim3 blockDims, Image* image, int nbHistogram, int method);
 
 #endif // __IMAGEPROCESSORGPU_HPP__
