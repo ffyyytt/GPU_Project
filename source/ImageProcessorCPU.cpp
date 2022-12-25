@@ -66,9 +66,9 @@ void ImageProcessorCPU::_hsv2rgb(float h, float s, float v, unsigned char& _r, u
 		g = 0;
 		b = x;
 	}
-	_r = round((r + m) * 255);
-	_g = round((g + m) * 255);
-	_b = round((b + m) * 255);
+	_r = std::round((r + m) * 255);
+	_g = std::round((g + m) * 255);
+	_b = std::round((b + m) * 255);
 }
 
 ImageProcessorCPU::ImageProcessorCPU()
@@ -107,7 +107,7 @@ void ImageProcessorCPU::histogram(float* imageHSV, int* hist, int width, int hei
 {
 	memset(hist, 0, nbHistogram * sizeof(float));
 	for (int i = 0; i < width*height; i++)
-		hist[(int) round(imageHSV[3 * i + 2] * (nbHistogram - 1))] += 1;
+		hist[(int) std::round(imageHSV[3 * i + 2] * (nbHistogram - 1))] += 1;
 }
 
 void ImageProcessorCPU::repart(int* hist, float* cdf, int width, int height, int nbHistogram, int method)
@@ -124,7 +124,7 @@ void ImageProcessorCPU::repart(int* hist, float* cdf, int width, int height, int
 void ImageProcessorCPU::equalization_v1(float* imageHSV, float* cdf, int width, int height, int nbHistogram)
 {
 	for (int i = 0; i < width*height; i++)
-		imageHSV[3*i + 2] = cdf[(int) round(imageHSV[3 * i + 2] * (nbHistogram - 1))] / cdf[nbHistogram-1];
+		imageHSV[3*i + 2] = cdf[(int) std::round(imageHSV[3 * i + 2] * (nbHistogram - 1))] / cdf[nbHistogram-1];
 }
 
 void ImageProcessorCPU::equalization_v2(float* imageHSV, float* cdf, int width, int height, int nbHistogram)
@@ -133,7 +133,7 @@ void ImageProcessorCPU::equalization_v2(float* imageHSV, float* cdf, int width, 
 		cdf[i] = cdf[i]/cdf[nbHistogram-1];
 
 	for (int i = 0; i < width*height; i++)
-		imageHSV[3 * i + 2] = cdf[(int) round(imageHSV[3 * i + 2] * (nbHistogram - 1))];
+		imageHSV[3 * i + 2] = cdf[(int) std::round(imageHSV[3 * i + 2] * (nbHistogram - 1))];
 }
 
 void ImageProcessorCPU::histogramEqualization(Image* image, int nbHistogram, int method)
