@@ -29,7 +29,7 @@ void ImageProcessorCPU::_hsv2rgb(float h, float s, float v, unsigned char& _r, u
 	float c = v * s;
 	float m = v - c;
 	h = h / 60;
-	float x = c * (1 - abs(_mod(h, 2) - 1));
+	float x = c * (1 - fabs(_mod(h, 2) - 1));
 	if (h < 1)
 	{
 		r = c;
