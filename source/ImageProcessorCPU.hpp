@@ -2,6 +2,7 @@
 #define __IMAGEPROCESSORCPU_HPP__
 
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <algorithm>
 #include "utils/image.hpp"
