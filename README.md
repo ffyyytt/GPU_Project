@@ -5,4 +5,9 @@
 ## Palais
 ![Palais](https://github.com/ffyyytt/GPU_Project/raw/main/report/images/report_palais.png)
 ## Lenna
-![Lenna](https://github.com/ffyyytt/GPU_Project/raw/main/report/images/report_lenna.png)
+```python
+image = cv2.cvtColor(cv2.imread("images/Lenna.png"), cv2.COLOR_BGR2RGB)
+image_brightness = change_brightness(image, -120)
+cv2.imwrite("images/Lenna_brightness.png", cv2.cvtColor(image_brightness, cv2.COLOR_RGB2BGR))
+```
+![Lenna](https://github.com/ffyyytt/GPU_Project/raw/main/report/images/lenna_changed.png)
