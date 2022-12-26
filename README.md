@@ -2,6 +2,18 @@
 [Google Colab Tesla T4](https://colab.research.google.com/drive/1KvNqcUhIPcUWGdpuyPGIak-UFbXNB3QI?usp=sharing)
 
 [Google Colab Tesla A100](https://colab.research.google.com/drive/1KmeUhvGiDaGMIySUO3ejYiOV5_2TpHCv?usp=sharing)
+### Windows
+```
+cd source
+.\make
+.\main --help
+```
+### Linux
+```
+cd source
+bash make.cmd
+./main --help
+```
 ## Chateau
 ![Chateau](https://github.com/ffyyytt/GPU_Project/raw/main/report/images/report_chateau.png)
 ## Palais
