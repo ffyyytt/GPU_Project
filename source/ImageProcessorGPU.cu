@@ -188,6 +188,7 @@ __global__ void repart_v2(int* hist, float* cdf, int width, int height, int nbHi
 	}
 }
 
+// When i = 0
 __global__ void _repart_v3(int* hist, float* cdf, int width, int height, int nbHistogram, int method)
 {
 	int total = blockDim.x*gridDim.x*blockDim.y*gridDim.y*blockDim.z*gridDim.z;
@@ -206,6 +207,7 @@ __global__ void _repart_v3(int* hist, float* cdf, int width, int height, int nbH
 	}
 }
 
+// When i > 0
 __global__ void _repart_v3(float* src, float* dst, int width, int height, int nbHistogram, int method, int step)
 {
 	int total = blockDim.x*gridDim.x*blockDim.y*gridDim.y*blockDim.z*gridDim.z;
@@ -224,6 +226,7 @@ __global__ void _repart_v3(float* src, float* dst, int width, int height, int nb
 	}
 }
 
+// Used Kogge-Stone Scan to create CDF.
 void repart_v3(dim3 gridDims, dim3 blockDims, int* hist, float* cdf, int width, int height, int nbHistogram, int method)
 {
 	float *cdf0, *cdf1;
@@ -250,6 +253,7 @@ void repart_v3(dim3 gridDims, dim3 blockDims, int* hist, float* cdf, int width, 
 	cudaFree(cdf1);
 }
 
+// Reduction i = 0
 __global__ void _pre_repart_v4(int* hist, float* cdf, int width, int height, int nbHistogram, int method)
 {
 	int total = blockDim.x*gridDim.x*blockDim.y*gridDim.y*blockDim.z*gridDim.z;
@@ -278,6 +282,7 @@ __global__ void _pre_repart_v4(int* hist, float* cdf, int width, int height, int
 	}
 }
 
+// Reduction i > 0
 __global__ void _pre_repart_v4(float* cdf, int width, int height, int nbHistogram, int method, int step)
 {
 	int total = 2*step*(blockDim.x*gridDim.x*blockDim.y*gridDim.y*blockDim.z*gridDim.z);
@@ -308,10 +313,13 @@ __global__ void _post_repart_v4(float* cdf, int width, int height, int nbHistogr
 	}
 }
 
+// Used Brent–Kung Scan to create CDF.
 void repart_v4(dim3 gridDims, dim3 blockDims, int* hist, float* cdf, int width, int height, int nbHistogram, int method)
 {
 	int i = 0;
 	int step = 1;
+
+	// Reduction
 	for (; step < nbHistogram; i++, step *=2)
 	{
 		if (i == 0)
@@ -320,6 +328,7 @@ void repart_v4(dim3 gridDims, dim3 blockDims, int* hist, float* cdf, int width, 
 			_pre_repart_v4<<<gridDims, blockDims>>>(cdf, width, height, nbHistogram, method, step);
 	}
 
+	// Post Reduction
 	for (step = step/2; step > 0; i++, step /=2)
 	{
 		_post_repart_v4<<<gridDims, blockDims>>>(cdf, width, height, nbHistogram, method, step);
@@ -354,6 +363,7 @@ void histogramEqualization(dim3 gridDims, dim3 blockDims, Image* image, int nbHi
 	cudaMalloc(&hist, nbHistogram*sizeof(int));
 	cudaMalloc(&cdf, nbHistogram*sizeof(float));
 
+	// Set init value to 0
 	cudaMemset(hist, 0, nbHistogram*sizeof(int));
 	cudaMemset(cdf, 0, nbHistogram*sizeof(int));
 
