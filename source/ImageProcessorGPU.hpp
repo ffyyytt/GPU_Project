@@ -32,6 +32,9 @@ __global__ void repart_v1(int* hist, float* cdf, int width, int height, int nbHi
 // Baseline optimize
 __global__ void repart_v2(int* hist, float* cdf, int width, int height, int nbHistogram, int method);
 
+// Baseline optimize (version 2) with shared memory
+__global__ void repart_v2_mem(int* hist, float* cdf, int width, int height, int nbHistogram, int method);
+
 // Used Kogge-Stone Scan to create CDF.
 void repart_v3(dim3 gridDims, dim3 blockDims, int* hist, float* cdf, int width, int height, int nbHistogram, int method);
 

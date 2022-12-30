@@ -148,6 +148,7 @@ __global__ void repart_v1(int* hist, float* cdf, int width, int height, int nbHi
     int x = blockIdx.x*blockDim.x + threadIdx.x;
 	int y = blockIdx.y*blockDim.y + threadIdx.y;
     int z = blockIdx.z*blockDim.z + threadIdx.z;
+	int hist0 = hist[0];
 
     int tid = x*blockDim.y*gridDim.y*blockDim.z*gridDim.z + y*blockDim.z*gridDim.z + z;
 	while (tid < nbHistogram)
@@ -155,7 +156,7 @@ __global__ void repart_v1(int* hist, float* cdf, int width, int height, int nbHi
 		float result = 0;
 		for (int i = 0; i <= tid; i++)
 			result += hist[i];
-		cdf[tid] = (result - method*hist[0])/(width*height - method*hist[0]);
+		cdf[tid] = (result - method*hist0)/(width*height - method*hist0);
 		tid += total;
 	}
 }
@@ -166,6 +167,7 @@ __global__ void repart_v2(int* hist, float* cdf, int width, int height, int nbHi
     int x = blockIdx.x*blockDim.x + threadIdx.x;
 	int y = blockIdx.y*blockDim.y + threadIdx.y;
     int z = blockIdx.z*blockDim.z + threadIdx.z;
+	int hist0 = hist[0];
 
     int tid = x*blockDim.y*gridDim.y*blockDim.z*gridDim.z + y*blockDim.z*gridDim.z + z;
 	float result = 0;
@@ -183,7 +185,40 @@ __global__ void repart_v2(int* hist, float* cdf, int width, int height, int nbHi
 			for (int i = nbHistogram - 1; i > tid; i--)
 				result -= hist[i];
 		}
-		cdf[tid] = (result - method*hist[0])/(width*height - method*hist[0]);
+		cdf[tid] = (result - method*hist0)/(width*height - method*hist0);
+		tid += total;
+	}
+}
+
+__global__ void repart_v2_mem(int* hist, float* cdf, int width, int height, int nbHistogram, int method)
+{
+	extern __shared__ int histmem[];
+	int total = blockDim.x*gridDim.x*blockDim.y*gridDim.y*blockDim.z*gridDim.z;
+    int x = blockIdx.x*blockDim.x + threadIdx.x;
+	int y = blockIdx.y*blockDim.y + threadIdx.y;
+    int z = blockIdx.z*blockDim.z + threadIdx.z;
+    int tid = x*blockDim.y*gridDim.y*blockDim.z*gridDim.z + y*blockDim.z*gridDim.z + z;
+
+	for (int i = threadIdx.x*blockDim.y*blockDim.z + threadIdx.y*blockDim.z + threadIdx.z; i < nbHistogram; i+=blockDim.x*blockDim.y*blockDim.z)
+        histmem[i] = hist[i];
+	__syncthreads();
+
+	float result = 0;
+	while (tid < nbHistogram)
+	{
+		if (tid < nbHistogram/2)
+		{
+			result = 0;
+			for (int i = 0; i <= tid; i++)
+				result += histmem[i];
+		}
+		else
+		{
+			result = width*height;
+			for (int i = nbHistogram - 1; i > tid; i--)
+				result -= histmem[i];
+		}
+		cdf[tid] = (result - method*histmem[0])/(width*height - method*histmem[0]);
 		tid += total;
 	}
 }
@@ -195,14 +230,15 @@ __global__ void _repart_v3(int* hist, float* cdf, int width, int height, int nbH
     int x = blockIdx.x*blockDim.x + threadIdx.x;
 	int y = blockIdx.y*blockDim.y + threadIdx.y;
     int z = blockIdx.z*blockDim.z + threadIdx.z;
+	int hist0 = hist[0];
 
     int tid = x*blockDim.y*gridDim.y*blockDim.z*gridDim.z + y*blockDim.z*gridDim.z + z;
 	while (tid < nbHistogram)
 	{
 		if (tid >= method + 1)
-			cdf[tid] = (hist[tid] + hist[tid-1]) / (0.0 + width*height - method*hist[0]);
+			cdf[tid] = (hist[tid] + hist[tid-1]) / (0.0 + width*height - method*hist0);
 		else if (tid == method)
-			cdf[tid] = hist[tid] / (0.0 + width*height - method*hist[0]);
+			cdf[tid] = hist[tid] / (0.0 + width*height - method*hist0);
 		tid += total;
 	}
 }
@@ -260,6 +296,7 @@ __global__ void _pre_repart_v4(int* hist, float* cdf, int width, int height, int
     int x = blockIdx.x*blockDim.x + threadIdx.x;
 	int y = blockIdx.y*blockDim.y + threadIdx.y;
     int z = blockIdx.z*blockDim.z + threadIdx.z;
+	int hist0 = hist[0];
 
     int tid = x*blockDim.y*gridDim.y*blockDim.z*gridDim.z + y*blockDim.z*gridDim.z + z;
 	while (tid < nbHistogram)
@@ -267,14 +304,14 @@ __global__ void _pre_repart_v4(int* hist, float* cdf, int width, int height, int
 		if (tid%2 == 1)
 		{
 			if (method == 0 || tid > 1)
-				cdf[tid] = (hist[tid] + hist[tid-1]) / (0.0 + width*height - method*hist[0]);
+				cdf[tid] = (hist[tid] + hist[tid-1]) / (0.0 + width*height - method*hist0);
 			else
-				cdf[tid] = hist[tid] / (0.0 + width*height - hist[0]);
+				cdf[tid] = hist[tid] / (0.0 + width*height - hist0);
 		}
 		else
 		{
 			if (method == 0 || tid > 1)
-				cdf[tid] = hist[tid] / (0.0 + width*height - method*hist[0]);
+				cdf[tid] = hist[tid] / (0.0 + width*height - method*hist0);
 			else
 				cdf[tid] = 0;
 		}
@@ -298,6 +335,7 @@ __global__ void _pre_repart_v4(float* cdf, int width, int height, int nbHistogra
 	}
 }
 
+// Post reduction
 __global__ void _post_repart_v4(float* cdf, int width, int height, int nbHistogram, int method, int step)
 {
 	int total = 2*step*(blockDim.x*gridDim.x*blockDim.y*gridDim.y*blockDim.z*gridDim.z);
@@ -306,34 +344,91 @@ __global__ void _post_repart_v4(float* cdf, int width, int height, int nbHistogr
     int z = blockIdx.z*blockDim.z + threadIdx.z;
 
     int tid = (x*blockDim.y*gridDim.y*blockDim.z*gridDim.z + y*blockDim.z*gridDim.z + z + 1)*2*step - 1;
-	while (tid < nbHistogram)
+	while (tid + step < nbHistogram)
 	{
 		cdf[tid + step] += cdf[tid];
 		tid += total;
 	}
 }
 
+__global__ void _repart_v4_mem(int* hist, float* cdf, int width, int height, int nbHistogram, int method)
+{
+	extern __shared__ float cdfmem[];
+	int total = blockDim.x*blockDim.y*blockDim.z;
+    int tid = threadIdx.x*blockDim.y*blockDim.z + threadIdx.y*blockDim.z + threadIdx.z;
+
+	int step = 1;
+	int hist0 = hist[0];
+	for (int i = tid; i < nbHistogram; i+=total)
+	{
+		if (i == 0 && method == 1)
+			continue;
+		cdfmem[i] = hist[i] / (width*height - method*hist0 + 0.0);
+	}
+	__syncthreads();
+
+	// Reduction
+	for (; step < nbHistogram; step *=2)
+	{
+		tid = (tid + 1)*step*2 - 1;
+		total = 2*step*total;
+		while (tid < nbHistogram)
+		{
+			cdfmem[tid] += cdfmem[tid - step];
+			tid += total;
+		}
+		tid = threadIdx.x*blockDim.y*blockDim.z + threadIdx.y*blockDim.z + threadIdx.z;
+		total = blockDim.x*blockDim.y*blockDim.z;
+		__syncthreads();
+	}
+
+	// Post reduction
+	for (step = step/2; step > 0; step /=2)
+	{
+		tid = (tid + 1)*step*2 - 1;
+		total = 2*step*total;
+		while (tid + step < nbHistogram)
+		{
+			cdfmem[tid + step] += cdfmem[tid];
+			tid += total;
+		}
+		tid = threadIdx.x*blockDim.y*blockDim.z + threadIdx.y*blockDim.z + threadIdx.z;
+		total = blockDim.x*blockDim.y*blockDim.z;
+		__syncthreads();
+	}
+
+	for (int i = tid; i < nbHistogram; i+=total)
+        cdf[i] = cdfmem[i];
+}
+
 // Used Brent–Kung Scan to create CDF.
 void repart_v4(dim3 gridDims, dim3 blockDims, int* hist, float* cdf, int width, int height, int nbHistogram, int method)
 {
-	int i = 0;
 	int step = 1;
 
-	// Reduction
-	for (; step < nbHistogram; i++, step *=2)
+	if (gridDims.x*gridDims.y*gridDims.z == 1 || blockDims.x*blockDims.y*blockDims.z >= nbHistogram)
 	{
-		if (i == 0)
-			_pre_repart_v4<<<gridDims, blockDims>>>(hist, cdf, width, height, nbHistogram, method);
-		else
-			_pre_repart_v4<<<gridDims, blockDims>>>(cdf, width, height, nbHistogram, method, step);
+		_repart_v4_mem<<<1, blockDims, nbHistogram*sizeof(float)>>>(hist, cdf, width, height, nbHistogram, method);
 	}
-
-	// Post Reduction
-	for (step = step/2; step > 0; i++, step /=2)
+	else
 	{
-		_post_repart_v4<<<gridDims, blockDims>>>(cdf, width, height, nbHistogram, method, step);
+		// Reduction
+		for (; step < nbHistogram; step *=2)
+		{
+			if (step == 1)
+				_pre_repart_v4<<<gridDims, blockDims>>>(hist, cdf, width, height, nbHistogram, method);
+			else
+				_pre_repart_v4<<<gridDims, blockDims>>>(cdf, width, height, nbHistogram, method, step);
+		}
+
+		// Post Reduction
+		for (step = step/2; step > 0; step /=2)
+		{
+			_post_repart_v4<<<gridDims, blockDims>>>(cdf, width, height, nbHistogram, method, step);
+		}
 	}
 }
+
 
 __global__ void equalization(float* imageHSV, float* cdf, int width, int height, int nbHistogram)
 {
@@ -377,7 +472,7 @@ void histogramEqualization(dim3 gridDims, dim3 blockDims, Image* image, int nbHi
 	histogram_mem<<<gridDims, blockDims, nbHistogram*sizeof(int)>>>(imageHSV, hist, image->_width, image->_height, nbHistogram);
 
 	// Repart
-	// repart_v2<<<gridDims, blockDims>>>(hist, cdf, image->_width, image->_height, nbHistogram, method);
+	// repart_v2_mem<<<gridDims, blockDims, nbHistogram*sizeof(int)>>>(hist, cdf, image->_width, image->_height, nbHistogram, method);
 	repart_v4(gridDims, blockDims, hist, cdf, image->_width, image->_height, nbHistogram, method); // version 3, 4 is call Host fucntion
 
 	// Equalization
