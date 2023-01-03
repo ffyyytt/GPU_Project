@@ -87,6 +87,25 @@ __global__ void rgb2hsv(unsigned char* pixels, float* imageHSV, int width, int h
 	}
 }
 
+__global__ void rgb2hsv_v0(unsigned char* pixels, float* imageHSV, int width, int height)
+{
+    int total = blockDim.x*gridDim.x*blockDim.y*gridDim.y*blockDim.z*gridDim.z;
+    int x = blockIdx.x*blockDim.x + threadIdx.x;
+	int y = blockIdx.y*blockDim.y + threadIdx.y;
+    int z = blockIdx.z*blockDim.z + threadIdx.z;
+
+    int tid = x*blockDim.y*gridDim.y*blockDim.z*gridDim.z + y*blockDim.z*gridDim.z + z;
+	int times = ceilf((width*height+0.0)/(total));
+	for (int i = 0; i < times; i++)
+	{
+		if (tid*times + i < width*height)
+		{
+			_rgb2hsv(pixels[3*(tid*times + i)], pixels[3*(tid*times + i) + 1], pixels[3*(tid*times + i) + 2],
+				imageHSV[3*(tid*times + i)], imageHSV[3*(tid*times + i) + 1], imageHSV[3*(tid*times + i) + 2]);
+		}
+	}
+}
+
 __global__ void hsv2rgb(unsigned char* pixels, float* imageHSV, int width, int height)
 {
     int total = blockDim.x*gridDim.x*blockDim.y*gridDim.y*blockDim.z*gridDim.z;

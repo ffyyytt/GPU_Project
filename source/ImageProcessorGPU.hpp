@@ -14,6 +14,9 @@ __device__ void _rgb2hsv(unsigned char _r, unsigned char _g, unsigned char _b, f
 // Convert one pixel HSV to RGB
 __device__ void _hsv2rgb(float h, float s, float v, unsigned char& _r, unsigned char& _g, unsigned char& _b);
 
+// Convert one image RGB to HSV version 0 (not optimize about bank)
+__global__ void rgb2hsv_v0(unsigned char* pixels, float* imageHSV, int width, int height);
+
 // Convert one image RGB to HSV
 __global__ void rgb2hsv(unsigned char* pixels, float* imageHSV, int width, int height);
 
